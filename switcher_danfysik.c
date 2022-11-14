@@ -8,7 +8,7 @@
  * 
  *    Ohio University Accelerator Laboratory, Athens, Ohio  45701
  * 
- *    carter@oual3.phy.ohiou.edu   Tel: (614) 593-1984   
+ *    carter@ohio.edu   Tel: (614) 593-1984   
  *----------------------------------------------------------------------------
  *
  * Authors:
@@ -22,6 +22,11 @@
  * Revision History:
  *   Revised for Danfysik switcher power supply 10 November 2022  D.E.Carter
  *
+ *   This program is used to control the switcher magnet current 
+ *   using mouse on the console computer.
+ *   This version communicates with the Danfysik System 8500 power supply
+ *   using the serial port /dev/ttyS0 and sends commands to adjust the 
+ *   magnet current.
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -82,8 +87,8 @@ struct sockaddr_in sin;
 struct sockaddr_in pin;
 struct hostent *hp;
 
-float xval=0.01,yval=6.0,txval,tyval,save_xval=0.01,save_yval=6.0;
-float xvalmax=13.7;
+float xval=0.001,yval=6.0,txval,tyval,save_xval=0.001,save_yval=6.0;
+float xvalmax=13.7; // calibration constant for switcher max ppm
 
 //
 
@@ -472,6 +477,17 @@ if(halt_update == 1)
 
   yval=6.0000;
   
+//
+// highres indicates the sensitivity of the mouse current movements
+//   highres = 0:  Grab mode, Red color, current follows mouse (fastest movement)
+//   highres = 1:  Medium mode, Green color, medium current movements
+//   highres = 2:  Fine mode, Blue color, fine current movements
+//   highres = 3:  ExtraFine mode, Magenta color, extra fine movements
+//   highres = 4:  SuperFine mode, Black color, super fine movements
+//   highres = 5:  Only used for quadrupoles, Cyan color, dA = dB movements
+//   highres = 6:  Only used for quadrupoles, Gray color, A or B only movements
+//
+
     if(highres == 0) {
     txval=((float)current_x/(float)new_width)*XSCALE;
     tyval=((float)((new_height-20.0-current_y))/(float)(new_height-36.0))*YSCALE;
@@ -520,7 +536,7 @@ if(halt_update == 1)
     }
   
   if(yval < 0.01) yval = 0.01;
-  if(xval < 0.01) xval = 0.01;
+  if(xval < 0.001) xval = 0.001;
   
   
   ixval = (xval/xvalmax)*1000000;
@@ -552,6 +568,17 @@ char x_command[100];
 char y_command[100];
 
 if(magnet_lock == 1) return;
+
+//
+// highres indicates the sensitivity of the mouse current movements
+//   highres = 0:  Grab mode, Red color, current follows mouse (fastest movement)
+//   highres = 1:  Medium mode, Green color, medium current movements
+//   highres = 2:  Fine mode, Blue color, fine current movements
+//   highres = 3:  ExtraFine mode, Magenta color, extra fine movements
+//   highres = 4:  SuperFine mode, Black color, super fine movements
+//   highres = 5:  Only used for quadrupoles, Cyan color, dA = dB movements
+//   highres = 6:  Only used for quadrupoles, Gray color, A or B only movements
+//
 
 if(rubberband  == 0) {
   if(event->xbutton.button == Button1){
@@ -690,6 +717,20 @@ void QuitCB(w, client_data, call_data)
         }
 }
 
+// 
+// FineCB and CoarseCB used to increase or decrease the sensitivity of the current movements
+// with respect to the mouse movements and button presses.
+//
+// highres indicates the sensitivity of the mouse current movements
+//   highres = 0:  Grab mode, Red color, current follows mouse (fastest movement)
+//   highres = 1:  Medium mode, Green color, medium current movements
+//   highres = 2:  Fine mode, Blue color, fine current movements
+//   highres = 3:  ExtraFine mode, Magenta color, extra fine movements
+//   highres = 4:  SuperFine mode, Black color, super fine movements
+//   highres = 5:  Only used for quadrupoles, Cyan color, dA = dB movements
+//   highres = 6:  Only used for quadrupoles, Gray color, A or B only movements
+//
+
 void FineCB(w, client_data, call_data)
         Widget  w;
         int     *client_data;
@@ -756,6 +797,7 @@ void CoarseCB(w, client_data, call_data)
         }
 }
   
+// SaveCB is used to remenber the current current setting so it can be restored by the "Restore" button
 
 void SaveCB(w, client_data, call_data)
         Widget  w;
@@ -818,7 +860,9 @@ void RestoreCB(w, client_data, call_data)
         }
 }
 
-  
+// Lock button is used to prevent movement of the magnet current until it is "Unlocked"
+// by pressing the "Lock" button and toggeling "Lock" mode off  
+
 void LockCB(w, client_data, call_data)
         Widget  w;
         int     *client_data;
@@ -884,9 +928,18 @@ void TimeOutCB(client_data, call_data )
                 }
         }
 
+//
+// switcher.tandem.data is a file that is used to set the switcher magnet to a specific value.
+//
+// the format of the file is "%s %d %f %f",device_name,&flag,&new_xval,&new_yval
+//   device name = "switcher" for this device
+//   flag = 1 to set the switcher to a new value, reset to 0 after it has been set
+//   xval = value to set the magnet current to
+//   yval = not used for switcher, only for quadrupoles
+//
 	if (rubberband == 1) time = 050;
 	else { 
-             time=50;
+             time=500;
 	     if ((input = fopen("switcher.tandem.data","r")) != NULL) {
 	        fscanf(input,"%s %d %f %f",device_name,&flag,&new_xval,&new_yval);
 		//printf("\n%s %d %f %f",device_name,flag,new_xval,new_yval);
@@ -1026,6 +1079,16 @@ void RedrawCB( w, client_data, call_data )
                   else 
                     {
                     //XAllocNamedColor (dsply,cmap,"Magenta",&col,&unused);
+//
+// highres indicates the sensitivity of the mouse current movements
+//   highres = 0:  Grab mode, Red color, current follows mouse (fastest movement)
+//   highres = 1:  Medium mode, Green color, medium current movements
+//   highres = 2:  Fine mode, Blue color, fine current movements
+//   highres = 3:  ExtraFine mode, Magenta color, extra fine movements
+//   highres = 4:  SuperFine mode, Black color, super fine movements
+//   highres = 5:  Only used for quadrupoles, Cyan color, dA = dB movements
+//   highres = 6:  Only used for quadrupoles, Gray color, A or B only movements
+//  
 			    
                     if(highres == 0) {
 			    XSetForeground(dsply,SimpleGC,ouRed);
