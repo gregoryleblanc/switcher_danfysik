@@ -1,15 +1,14 @@
 
 /*----------------------------------------------------------------------------
- *  Copyright (c) 1991, 1992, 1993, 1994   Ohio University
- *                                         Accelerator Laboratory
+ *  Copyright (c) 1991 - 2022              Ohio University
+ *                                         Edwards Accelerator Laboratory
  *
  *  This software was partially developed under a United States Government
  *  license described in the Notice file included as part of this distribution
  * 
  *    Ohio University Accelerator Laboratory, Athens, Ohio  45701
  * 
- *    carter@oual3.phy.ohiou.edu   Tel: (614) 593-1984  Fax: (614) 593-1436 
- *    odonnell@oual3.phy.ohiou.edu Tel: (614) 593-1977  Fax: (614) 593-1436 
+ *    carter@oual3.phy.ohiou.edu   Tel: (614) 593-1984   
  *----------------------------------------------------------------------------
  *
  * Authors:
@@ -21,6 +20,7 @@
  *
  * Original version DAQ created 1991
  * Revision History:
+ *   Revised for Danfysik switcher power supply 10 November 2022  D.E.Carter
  *
  *----------------------------------------------------------------------------*/
 
@@ -87,26 +87,17 @@ float xvalmax=13.7;
 
 //
 
-void Ex1CB();
-void Ex2CB();
-void Ex3CB();
-void Ex4CB();
-void ZoomCB();
-void UnZoomCB();
-void PanlCB();
-void PanrCB();
-void YupCB();
-void YdnCB();
-void AutoCB();
-void HomeCB();
-void RefCB();
+void FineCB();
+void CoarseCB();
+void SaveCB();
+void RestoreCB();
+void LockCB();
 void QuitCB();
 void RedrawCB();
 void ResizeCB();
 void xs_wprintf();
 void TimeOutCB();
 int  readdata();
-int  updatedata();
 void start_rubber_band();
 void end_rubber_band();
 void track_rubber_band();
@@ -175,7 +166,7 @@ main(argc, argv)
 	char *argv[];
 {
 	Widget 	toplevel, frame, infobar, quitbutton, ex1, ex2, ex3, ex4, home;
-	Widget  zoom, unzoom, panl, panr, yauto, yup, ydn, ref;
+	Widget  fine, coarse, save, restore, yauto, yup, ydn, lock;
         rubber_band_data data;
 	XtAppContext app;
 	XSetWindowAttributes	attrs;
@@ -196,14 +187,6 @@ main(argc, argv)
 	/* XtInitialize is called first to let to digest any command
 		line arguments for windows; it will leave anything it
 		doesn't want for us. */
-//      printf("\nEntering fpdcrefx...");
-/*
-	printf("Enter disk and tag number to plot:");
-	scanf("%d %d",&plot.disk,&plot.tag);
-*/
-	//id = atoi(argv[2]);
-	//parent = atoi(argv[3]);
-        //refloops = atoi(argv[4]);
  
 	id = 0;
 	parent = 0;
@@ -225,6 +208,8 @@ main(argc, argv)
         printf("Could not open port /dev/ttyS0\n");
         return 1;
     }
+
+// initialize /dev/ttyS0 parameters
 
     tcgetattr(fd, &options); //get port options
 
@@ -248,23 +233,11 @@ main(argc, argv)
 
     sleep(1);
 
-/*
-	printf("Readdata completed, disk %d tag %d start %d stop %d\n",
-			plot.disk,plot.tag,plot.start,plot.stop);
-
-*/
-  
 	n = 0;
 	XtSetArg(wargs[n], XmNheight, 480); n++;
 	XtSetArg(wargs[n], XmNwidth, 640); n++;
         XtSetArg(wargs[n], XmNx    , 640); n++;
         XtSetArg(wargs[n], XmNy    , 480); n++;
-/*
-	XtSetArg(wargs[n], XmNheight, 500); n++;
-        XtSetArg(wargs[n], XmNwidth, 700); n++;
-        XtSetArg(wargs[n], XmNx    , 700); n++;
-        XtSetArg(wargs[n], XmNy    , 700); n++;
-*/
 	frame = XtCreateManagedWidget("Frame", xmFormWidgetClass,
 				toplevel, wargs, n);
 
@@ -276,6 +249,7 @@ main(argc, argv)
 	infobar = XmCreateRowColumn(frame, "infobar", wargs, n);
 	XtManageChild(infobar);
 
+// define the "Quit" button
 	n = 0;
 	xmstr = XmStringCreate("Quit", XmSTRING_DEFAULT_CHARSET);
 	XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
@@ -289,113 +263,8 @@ main(argc, argv)
 	XtAddCallback(quitbutton, XmNactivateCallback, QuitCB, 2);
 	XtAddCallback(quitbutton, XmNdisarmCallback, QuitCB, 3);
 	XtManageChild(quitbutton);
-/*
-        n = 0;
-        xmstr = XmStringCreate(argv[5], XmSTRING_DEFAULT_CHARSET);
-        XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
-        XtSetArg(wargs[n], XmNadjustLast, False); n++;
-        XtSetArg(wargs[n], XmNpacking, XmPACK_NONE); n++;
-        XtSetArg(wargs[n], XmNbackground, 0x00ee76); n++;
-        XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
-        ex1 = XmCreatePushButton(infobar, "ex1", wargs, n);
-        XtAddCallback(ex1, XmNarmCallback, Ex1CB, 1);
-        XtAddCallback(ex1, XmNactivateCallback, Ex1CB, 2);
-        XtAddCallback(ex1, XmNdisarmCallback, Ex1CB, 3);
-        XtManageChild(ex1);
-
-        n = 0;
-        xmstr = XmStringCreate(argv[6], XmSTRING_DEFAULT_CHARSET);
-        XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
-        XtSetArg(wargs[n], XmNadjustLast, False); n++;
-        XtSetArg(wargs[n], XmNpacking, XmPACK_NONE); n++;
-        XtSetArg(wargs[n], XmNbackground, 0x00ee76); n++;
-        XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
-        ex2 = XmCreatePushButton(infobar, "ex2", wargs, n);
-        XtAddCallback(ex2, XmNarmCallback, Ex2CB, 1);
-        XtAddCallback(ex2, XmNactivateCallback, Ex2CB, 2);
-        XtAddCallback(ex2, XmNdisarmCallback, Ex2CB, 3);
-        XtManageChild(ex2);
-
-        n = 0;
-        xmstr = XmStringCreate(argv[7], XmSTRING_DEFAULT_CHARSET);
-        XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
-        XtSetArg(wargs[n], XmNadjustLast, False); n++;
-        XtSetArg(wargs[n], XmNpacking, XmPACK_NONE); n++;
-        XtSetArg(wargs[n], XmNbackground, 0x00ee76); n++;
-        XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
-        ex3 = XmCreatePushButton(infobar, "ex3", wargs, n);
-        XtAddCallback(ex3, XmNarmCallback, Ex3CB, 1);
-        XtAddCallback(ex3, XmNactivateCallback, Ex3CB, 2);
-        XtAddCallback(ex3, XmNdisarmCallback, Ex3CB, 3);
-        XtManageChild(ex3);
-
-        n = 0;
-        xmstr = XmStringCreate(argv[8], XmSTRING_DEFAULT_CHARSET);
-        XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
-        XtSetArg(wargs[n], XmNadjustLast, False); n++;
-        XtSetArg(wargs[n], XmNpacking, XmPACK_NONE); n++;
-        XtSetArg(wargs[n], XmNbackground, 0x00ee76); n++;
-        XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
-        ex4 = XmCreatePushButton(infobar, "ex4", wargs, n);
-        XtAddCallback(ex4, XmNarmCallback, Ex4CB, 1);
-        XtAddCallback(ex4, XmNactivateCallback, Ex4CB, 2);
-        XtAddCallback(ex4, XmNdisarmCallback, Ex4CB, 3);
-        XtManageChild(ex4);
-*/
-        n = 0;
-        xmstr = XmStringCreate("Grab", XmSTRING_DEFAULT_CHARSET);
-        XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
-        XtSetArg(wargs[n], XmNadjustLast, False); n++;
-        XtSetArg(wargs[n], XmNpacking, XmPACK_NONE); n++;
-        //XtSetArg(wargs[n], XmNbackground, 0x87cefa); n++;
-        //XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
-        XtSetArg(wargs[n], XmNbackground, 256*256*255+256*0+0); n++; // red1
-        XtSetArg(wargs[n], XmNforeground, 0xffffff); n++;
-        home = XmCreatePushButton(infobar, "home", wargs, n);
-        XtAddCallback(home, XmNarmCallback, HomeCB, 1);
-        XtAddCallback(home, XmNactivateCallback, HomeCB, 2);
-        XtAddCallback(home, XmNdisarmCallback, HomeCB, 3);
-        XtManageChild(home);
- /* 
-        n = 0;
-        xmstr = XmStringCreate("A = B", XmSTRING_DEFAULT_CHARSET);
-        XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
-        XtSetArg(wargs[n], XmNadjustLast, False); n++;
-        XtSetArg(wargs[n], XmNpacking, XmPACK_NONE); n++;
-        XtSetArg(wargs[n], XmNbackground, 0xffff00); n++;
-        XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
-        yauto = XmCreatePushButton(infobar, "yauto", wargs, n);
-        XtAddCallback(yauto, XmNarmCallback, AutoCB, 1);
-        XtAddCallback(yauto, XmNactivateCallback, AutoCB, 2);
-        XtAddCallback(yauto, XmNdisarmCallback, AutoCB, 3);
-        XtManageChild(yauto);
-        n = 0;
-	
-        xmstr = XmStringCreate("dA = dB", XmSTRING_DEFAULT_CHARSET);
-        XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
-        XtSetArg(wargs[n], XmNadjustLast, False); n++;
-        XtSetArg(wargs[n], XmNpacking, XmPACK_NONE); n++;
-        XtSetArg(wargs[n], XmNbackground, 0xfafad2); n++;
-        XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
-        ydn = XmCreatePushButton(infobar, "ydn", wargs, n);
-        XtAddCallback(ydn, XmNarmCallback, YdnCB, 1);
-        XtAddCallback(ydn, XmNactivateCallback, YdnCB, 2);
-        XtAddCallback(ydn, XmNdisarmCallback, YdnCB, 3);
-        XtManageChild(ydn);
-
-        n = 0;
-        xmstr = XmStringCreate("A OR B", XmSTRING_DEFAULT_CHARSET);
-        XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
-        XtSetArg(wargs[n], XmNadjustLast, False); n++;
-        XtSetArg(wargs[n], XmNpacking, XmPACK_NONE); n++;
-        XtSetArg(wargs[n], XmNbackground, 0xe0ffff); n++;
-        XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
-        yup = XmCreatePushButton(infobar, "yup", wargs, n);
-        XtAddCallback(yup, XmNarmCallback, YupCB, 1);
-        XtAddCallback(yup, XmNactivateCallback, YupCB, 2);
-        XtAddCallback(yup, XmNdisarmCallback, YupCB, 3);
-        XtManageChild(yup);
-*/
+  
+// define the "Fine" button
         n = 0;
         xmstr = XmStringCreate("Fine", XmSTRING_DEFAULT_CHARSET);
         XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
@@ -404,12 +273,13 @@ main(argc, argv)
         //XtSetArg(wargs[n], XmNbackground, 0xffb6c1); n++;
         XtSetArg(wargs[n], XmNbackground, 256*256*255+256*236+139); n++; // lightgoldenrod
         XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
-        zoom = XmCreatePushButton(infobar, "zoom", wargs, n);
-        XtAddCallback(zoom, XmNarmCallback, ZoomCB, 1);
-        XtAddCallback(zoom, XmNactivateCallback, ZoomCB, 2);
-        XtAddCallback(zoom, XmNdisarmCallback, ZoomCB, 3);
-        XtManageChild(zoom);
+        fine = XmCreatePushButton(infobar, "fine", wargs, n);
+        XtAddCallback(fine, XmNarmCallback, FineCB, 1);
+        XtAddCallback(fine, XmNactivateCallback, FineCB, 2);
+        XtAddCallback(fine, XmNdisarmCallback, FineCB, 3);
+        XtManageChild(fine);
 
+// define the "Coarse" button
         n = 0;
         xmstr = XmStringCreate("Coarse", XmSTRING_DEFAULT_CHARSET);
         XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
@@ -417,12 +287,13 @@ main(argc, argv)
         XtSetArg(wargs[n], XmNpacking, XmPACK_NONE); n++;
         XtSetArg(wargs[n], XmNbackground, 0x00ee76); n++;
         XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
-        unzoom = XmCreatePushButton(infobar, "unzoom", wargs, n);
-        XtAddCallback(unzoom, XmNarmCallback, UnZoomCB, 1);
-        XtAddCallback(unzoom, XmNactivateCallback, UnZoomCB, 2);
-        XtAddCallback(unzoom, XmNdisarmCallback, UnZoomCB, 3);
-        XtManageChild(unzoom);
+        coarse = XmCreatePushButton(infobar, "coarse", wargs, n);
+        XtAddCallback(coarse, XmNarmCallback, CoarseCB, 1);
+        XtAddCallback(coarse, XmNactivateCallback, CoarseCB, 2);
+        XtAddCallback(coarse, XmNdisarmCallback, CoarseCB, 3);
+        XtManageChild(coarse);
   
+// define the "Save" button
         n = 0;
         xmstr = XmStringCreate("Save", XmSTRING_DEFAULT_CHARSET);
         XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
@@ -432,12 +303,13 @@ main(argc, argv)
         //XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
         XtSetArg(wargs[n], XmNbackground, 256*256*255+256*0+255); n++; // magenta
         XtSetArg(wargs[n], XmNforeground, 0xffffff); n++;
-        panl = XmCreatePushButton(infobar, "panl", wargs, n);
-        XtAddCallback(panl, XmNarmCallback, PanlCB, 1);
-        XtAddCallback(panl, XmNactivateCallback, PanlCB, 2);
-        XtAddCallback(panl, XmNdisarmCallback, PanlCB, 3);
-        XtManageChild(panl);
+        save = XmCreatePushButton(infobar, "save", wargs, n);
+        XtAddCallback(save, XmNarmCallback, SaveCB, 1);
+        XtAddCallback(save, XmNactivateCallback, SaveCB, 2);
+        XtAddCallback(save, XmNdisarmCallback, SaveCB, 3);
+        XtManageChild(save);
 
+// define the "Restore" button
         n = 0;
         xmstr = XmStringCreate("Restore", XmSTRING_DEFAULT_CHARSET);
         XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
@@ -447,24 +319,13 @@ main(argc, argv)
         //XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
         XtSetArg(wargs[n], XmNbackground, 256*256*230+256*99+99); n++; //indianred1
         XtSetArg(wargs[n], XmNforeground, 0xffffff); n++;
-        panr = XmCreatePushButton(infobar, "panr", wargs, n);
-        XtAddCallback(panr, XmNarmCallback, PanrCB, 1);
-        XtAddCallback(panr, XmNactivateCallback, PanrCB, 2);
-        XtAddCallback(panr, XmNdisarmCallback, PanrCB, 3);
-        XtManageChild(panr);
-/* 
-        n = 0;
-        xmstr = XmStringCreate("Ref", XmSTRING_DEFAULT_CHARSET);
-        XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
-        XtSetArg(wargs[n], XmNadjustLast, False); n++;
-        XtSetArg(wargs[n], XmNpacking, XmPACK_NONE); n++;
-        ref = XmCreatePushButton(infobar, "ref", wargs, n);
-        XtAddCallback(ref, XmNarmCallback, RefCB, 1);
-        XtAddCallback(ref, XmNactivateCallback, RefCB, 2);
-        XtAddCallback(ref, XmNdisarmCallback, RefCB, 3);
-        XtManageChild(ref);
-*/           
+        restore = XmCreatePushButton(infobar, "restore", wargs, n);
+        XtAddCallback(restore, XmNarmCallback, RestoreCB, 1);
+        XtAddCallback(restore, XmNactivateCallback, RestoreCB, 2);
+        XtAddCallback(restore, XmNdisarmCallback, RestoreCB, 3);
+        XtManageChild(restore);
                             
+// define the "Lock" button
         n = 0;
         xmstr = XmStringCreate("Lock", XmSTRING_DEFAULT_CHARSET);
         XtSetArg(wargs[n], XmNlabelString, xmstr); n++;
@@ -472,11 +333,11 @@ main(argc, argv)
         XtSetArg(wargs[n], XmNpacking, XmPACK_NONE); n++;
         XtSetArg(wargs[n], XmNbackground, 256*256*255+256*20+147); n++; //deeppink
         XtSetArg(wargs[n], XmNforeground, 0xffffff); n++;
-        ref = XmCreatePushButton(infobar, "ref", wargs, n);
-        XtAddCallback(ref, XmNarmCallback, RefCB, 1);
-        XtAddCallback(ref, XmNactivateCallback, RefCB, 2);
-        XtAddCallback(ref, XmNdisarmCallback, RefCB, 3);
-        XtManageChild(ref);    
+        lock = XmCreatePushButton(infobar, "lock", wargs, n);
+        XtAddCallback(lock, XmNarmCallback, LockCB, 1);
+        XtAddCallback(lock, XmNactivateCallback, LockCB, 2);
+        XtAddCallback(lock, XmNdisarmCallback, LockCB, 3);
+        XtManageChild(lock);    
 
 	n = 0;
 	xmstr = XmStringCreate("Label", XmSTRING_DEFAULT_CHARSET);
@@ -571,9 +432,9 @@ gc = XtGetGC(w,GCForeground | GCBackground |
              GCFunction | GCLineStyle, &values);
 return gc;
 }
-//
-//dec
-//
+
+// section to follow mouse while updating the magnet value
+
 void start_rubber_band(w,data,event)
 Widget    w;
 rubber_band_data  *data;
@@ -588,6 +449,7 @@ data->last_y = data->start_y = event->xbutton.y;
 XDrawLine(XtDisplay(w), XtWindow(w), data->gc, data->start_x,
           data->start_y, data->last_x, data->last_y);
 }
+
 void track_rubber_band(w,data,event)
 Widget    w;
 rubber_band_data  *data;
@@ -598,8 +460,6 @@ char x_command[100];
 char y_command[100];
 int dispx,dispy;
 
-//float xval,yval;
-	
 if(magnet_lock == 1) return;
 
 if(halt_update == 1)
@@ -613,52 +473,36 @@ if(halt_update == 1)
   yval=6.0000;
   
     if(highres == 0) {
-    //xval=current_x/100.0;
-    //yval=(float)((900-current_y)/100.0)*1.15;
     txval=((float)current_x/(float)new_width)*XSCALE;
     tyval=((float)((new_height-20.0-current_y))/(float)(new_height-36.0))*YSCALE;
-    //printf("\nx=%f y=%f",txval,tyval); 
     if(fabs(txval - xval) < .5) { 
-    // &&  (fabs(tyval - yval) < 1.234)) {
-         //xval=((float)current_x/(float)new_width)*XSCALE;
-         //yval=((float)((new_height-20.0-current_y))/(float)(new_height-36.0))*YSCALE;
          xval=txval;
-	 //yval=tyval;
 	 }
     }
   if(highres == 1) {
     if(current_x > data->last_x)xval=xval+.004;
     if(current_x < data->last_x)xval=xval-.004;
-    //if(current_y > data->last_y)yval=yval-.004;
-    //if(current_y < data->last_y)yval=yval+.004;
     }
   if(highres == 2) {
     if(current_x > data->last_x)xval=xval+.001;
     if(current_x < data->last_x)xval=xval-.001;
-    //if(current_y > data->last_y)yval=yval-.001;
-    //if(current_y < data->last_y)yval=yval+.001;
     }
 
   if(highres == 3) {
     if(current_x > data->last_x)xval=xval+.00025;
     if(current_x < data->last_x)xval=xval-.00025;
-    //if(current_y > data->last_y)yval=yval-.00025;
-    //if(current_y < data->last_y)yval=yval+.00025;
     }
   if(highres == 4) {
     if(current_x > data->last_x) xval=xval+.00005;
     if(current_x < data->last_x) xval=xval-.00005;
-    //yval=xval;
     }
    
   if(highres == 5) {
     if(current_x > data->last_x) {
        xval=xval+.004;
-       //yval=yval+.004;
        }
     if(current_x < data->last_x) {
        xval=xval-.004;
-       //yval=yval-.004;
        }
     }
 
@@ -685,16 +529,18 @@ if(halt_update == 1)
 
 // write messages to the Danfysik                    
  
-// write(fd, x_command, strlen(x_command));
 write(fd, x_command, strlen(x_command));
 write(fd, "\n", 1);
-  //printf("\n x = %s \n",x_command);
-
 	  
   data->last_x = event->xbutton.x;
   data->last_y = event->xbutton.y;
   }
 }
+
+// section to increment as a function of button pressed and released...
+// button 1 (left) = decrement the magnet value 1 step
+// button 2 (middle) =  cycle through the resolutions (finer each press looping at end)
+// button 3 (right) = increment the magnet value 1 step
 
 void end_rubber_band(w,data,event)
 Widget    w;
@@ -708,26 +554,7 @@ char y_command[100];
 if(magnet_lock == 1) return;
 
 if(rubberband  == 0) {
-  //XDrawLine(XtDisplay(w), XtWindow(w), data->gc, data->start_x,
-  //       data->start_y, data->last_x, data->last_y);
-  //data->last_x = event->xbutton.x;
-  //data->last_y = event->xbutton.y;
-  //start=plot.start;
-  //len=plot.stop-plot.start+1;
   if(event->xbutton.button == Button1){
-    //plot.start = start + (len*((float)data->start_x/(float)new_width));
-    //stop = start + (len*((float)data->last_x/(float)new_width));
-    //plot.start=0;
-    //plot.stop=1000;
-    //printf("\n x = %d, y = %d\n",event->xbutton.x,event->xbutton.y);
-    /*
-    if(highres == 0) highres = 1;
-    else if(highres == 1) highres = 2;
-    else if(highres == 2) highres = 3;
-    else if(highres == 4) highres = 1;
-    else if(highres == 5) highres = 1;
-    else if(highres == 6) highres = 1;
-    */
     if(highres == 0) xval = xval-.016;
     else if(highres == 1) xval=xval-.004;
     else if(highres == 2) xval=xval-.001;
@@ -737,16 +564,6 @@ if(rubberband  == 0) {
     else if(highres == 6) xval=xval-.004;
     }
   if(event->xbutton.button == Button3){
-    //plot.start = 0;
-    //plot.stop = 1000;
-    /*
-    if(highres == 4) highres = 0;
-    else if(highres == 3) highres = 2;
-    else if(highres == 2) highres = 1;
-    else if(highres == 1) highres = 0;
-    else if(highres == 5) highres = 0;
-    else if(highres == 6) highres = 0;
-    */
     if(highres == 0) xval = xval+.016;
     else if(highres == 1) xval=xval+.004;
     else if(highres == 2) xval=xval+.001;
@@ -755,11 +572,7 @@ if(rubberband  == 0) {
     else if(highres == 5) xval=xval+.004;
     else if(highres == 6) xval=xval+.004;
     }
-  //if(stop > (plot.start+1)) plot.stop=stop;
   if(event->xbutton.button == Button2){
-    //plot.start=0;           
-    //plot.stop=1000;         
-    //highres = 0;
     if(highres == 0) highres = 1;
     else if(highres == 1) highres = 2;
     else if(highres == 2) highres = 3;
@@ -767,10 +580,9 @@ if(rubberband  == 0) {
     else if(highres == 4) highres = 0;
     }
   }
-  ixval = (xval/xvalmax)*1000000;
-  printf("ixval = %06d\n",ixval);
-//sprintf(x_command,"da 0 %i",(xval*1000000)/xvalmax);
-  sprintf(x_command,"da 0 %06d",ixval);
+ixval = (xval/xvalmax)*1000000;
+printf("ixval = %06d\n",ixval);
+sprintf(x_command,"da 0 %06d",ixval);
 write(fd, x_command, strlen(x_command));
 write(fd, "\n", 1);
 rubberband=0;
@@ -809,18 +621,7 @@ void exit_window(w,data,event)
 
 void forcedexit()
   {
-//  if(shmdt(shmpltptr) == -1)
-//    {
-//    printf("\nshmdt failed in QuitCB.\n");
-//   }
 waittilldone:
-//  if(shmctl(id,IPC_RMID,0) == -1)
-//    {
-//    printf("\nshmctl release failed in QUIT.\n");
-//    goto waittilldone;
-//   }
-//printf("\n Shared memory id %d deallocated in daqxplot \n",id);
-//XtCloseDisplay(XtDisplay(w));
   close(fd);
   exit(0);
   }
@@ -889,203 +690,7 @@ void QuitCB(w, client_data, call_data)
         }
 }
 
-
-
-void Ex1CB(w, client_data, call_data)
-	Widget	w;
-	int	*client_data;
-	XmAnyCallbackStruct	*call_data;
-{
-	static int flag;
-	int i;
-        struct stat stbuf;
-	i = client_data;
-
-	/* This is done to assure all the activate callbacks are complete
-		before the program ends.  Refer to the X Window System
-		Programming and Applications book by D.A. Young, pg 77. */
-
-	switch(i) {
-
-	case 1:	/* Arm */
-			
-		flag = 0;	/* if we disarm now, nothing happens */
-		break;
-
-	case 2: /* Activate */
-
-		flag = 1;	/* user released button, stand by to quit */
-		break;
-
-	case 3: /* Disarm */
-
-                if (flag == 1)  /* finished with things, now exit */
-                  {
-                  if(stat("ex1.daq",&stbuf) != -1)
-                    {
-                    system("./rdaq_client localhost ex1\n");
-                    }
-                  else if(stat("Rbuttons",&stbuf) != -1)
-                    {
-                    system("./rdaq_client 10.0.0.11 ex1\n");
-                    }
-                  else  
-                    {
-                    plot.stop = plot.start + (((plot.stop-plot.start)+1)/4)-1;
-                    if(XtIsRealized(canvas))
-                      XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
-		    }
-                  }
-	}
-}
-void Ex2CB(w, client_data, call_data)
-        Widget  w;
-        int     *client_data;
-        XmAnyCallbackStruct     *call_data;
-{
-        static int flag;
-        int i, delta;
-        struct stat stbuf;
-        i = client_data;
-
-        /* This is done to assure all the activate callbacks are complete
-                before the program ends.  Refer to the X Window System
-                Programming and Applications book by D.A. Young, pg 77. */
-
-        switch(i) {
-
-        case 1: /* Arm */
-
-                flag = 0;       /* if we disarm now, nothing happens */
-                break;
-
-        case 2: /* Activate */
-
-                flag = 1;       /* user released button, stand by to quit */
-                break;
-
-        case 3: /* Disarm */
-
-                if (flag == 1)  /* finished with things, now exit */
-                  {
-                  if(stat("ex2.daq",&stbuf) != -1)
-                    {
-                    system("./rdaq_client localhost ex2\n");
-                    }
-                  else if(stat("Rbuttons",&stbuf) != -1)
-                    {
-                    system("./rdaq_client 10.0.0.11 ex2\n");
-                    }
-                  else
-                    {
-                    delta = (((plot.stop-plot.start)+1) / 4);
-                    plot.start = plot.start + delta;
-                    plot.stop = plot.start + delta - 1;
-                    if(XtIsRealized(canvas))
-                      XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
-                    }
-                  }
-
-        }
-}
-void Ex3CB(w, client_data, call_data)
-        Widget  w;
-        int     *client_data;
-        XmAnyCallbackStruct     *call_data;
-{
-        static int flag;
-        int i, delta;
-        struct stat stbuf;
-        i = client_data;
-
-        /* This is done to assure all the activate callbacks are complete
-                before the program ends.  Refer to the X Window System
-                Programming and Applications book by D.A. Young, pg 77. */
-
-        switch(i) {
-
-        case 1: /* Arm */
-
-                flag = 0;       /* if we disarm now, nothing happens */
-                break;
-
-        case 2: /* Activate */
-
-                flag = 1;       /* user released button, stand by to quit */
-                break;
-
-        case 3: /* Disarm */
-
-                if (flag == 1)  /* finished with things, now exit */
-                  {
-                  if(stat("ex3.daq",&stbuf) != -1)
-                    {
-                    system("./rdaq_client localhost ex3\n");
-                    }
-                  else if(stat("Rbuttons",&stbuf) != -1)
-                    {
-                    system("./rdaq_client 10.0.0.11 ex3\n");
-                    }
-                  else
-                    {
-                    delta = (((plot.stop-plot.start)+1) / 4);
-                    plot.start = plot.start + (2 * delta);
-                    plot.stop = plot.start + delta - 1;
-                    if(XtIsRealized(canvas))
-                      XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
-                    }
-                  }
-
-        }
-}
-void Ex4CB(w, client_data, call_data)
-        Widget  w;
-        int     *client_data;
-        XmAnyCallbackStruct     *call_data;
-{
-        static int flag;
-        int i, delta;
-        struct stat stbuf;
-        i = client_data;
-
-        switch(i) {
-
-        case 1: /* Arm */
-
-                flag = 0;       /* if we disarm now, nothing happens */
-                break;
-
-        case 2: /* Activate */
-
-                flag = 1;       /* user released button, stand by to quit */
-                break;
-
-        case 3: /* Disarm */
-
-                if (flag == 1)  /* finished with things, now exit */
-                  {
-                  if(stat("ex4.daq",&stbuf) != -1)
-                    {
-                    system("./rdaq_client localhost ex4\n");
-                    }
-                  else if(stat("Rbuttons",&stbuf) != -1)
-                    {
-                    system("./rdaq_client 10.0.0.11 ex4\n");
-                    }
-                  else
-                    {
-                    delta = (((plot.stop-plot.start)+1) / 4);
-                    plot.start = plot.start + (3 * delta);
-                    plot.stop = plot.start + delta - 1;
-                    if(XtIsRealized(canvas))
-                      XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
-                    }
-                  }
-
-        }
-}
-
-void ZoomCB(w, client_data, call_data)
+void FineCB(w, client_data, call_data)
         Widget  w;
         int     *client_data;
         XmAnyCallbackStruct     *call_data;
@@ -1107,31 +712,18 @@ void ZoomCB(w, client_data, call_data)
                 break;
         case 3: /* Disarm */
                 if (flag == 1) {        /* finished with things, now exit */
-                   //if(rtype == 0) delta = (plot.stop - plot.start ) / 4;
-		   //else delta = 64;
-                   //plot.start = plot.start + delta;
-                   //if((plot.stop - delta) > plot.start)plot.stop = plot.stop - delta;
-                   //if(XtIsRealized(canvas))
 	           if(highres == 0) highres=1;
 		   else if(highres == 1) highres=2;
 		   else if(highres == 2) highres=3;
 		   else if(highres == 3) highres=4;
 		   else if(highres == 5) highres=1;
 		   else if(highres == 6) highres=1;
-                   /*  
-                   if(highres == 1) xval=xval+.004;
-                   else if(highres == 2) xval=xval+.001;
-                   else if(highres == 3) xval=xval+.00025;
-                   else if(highres == 5) xval=xval+.004;
-                   else if(highres == 6) xval=xval+.004;
-                   */
-                   //XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
                 }
 
         }
 }
 
-void UnZoomCB(w, client_data, call_data)
+void CoarseCB(w, client_data, call_data)
         Widget  w;
         int     *client_data;
         XmAnyCallbackStruct     *call_data;
@@ -1153,36 +745,19 @@ void UnZoomCB(w, client_data, call_data)
                 break;
         case 3: /* Disarm */
                 if (flag == 1) {        /* finished with things, now exit */
-                   //if(rtype == 0) delta = (plot.stop - plot.start ) / 4;
-                   //else delta = 64;
-                   //plot.start = plot.start - delta;
-                   //plot.stop = plot.stop + delta;
-		   //if(plot.start < 0) plot.start = 0;
-		   //if(plot.start < plot.istart) plot.start = plot.istart;
-                   //if(plot.stop > plot.istop) plot.stop = plot.istop;
-                   //if(XtIsRealized(canvas))
-                   //XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
                    if(highres == 4) highres=3;
 		   else if(highres == 3) highres=2;
 		   else if(highres == 2) highres=1;
 		   else if(highres == 1) highres=0;
 		   else if(highres == 5) highres=0;
 		   else if(highres == 6) highres=0;
-                   /*
-                   if(highres == 1) xval=xval+.004;
-                   else if(highres == 2) xval=xval+.001;
-                   else if(highres == 3) xval=xval+.00025;
-                   else if(highres == 5) xval=xval+.004;
-                   else if(highres == 6) xval=xval+.004;
-                   */
-                   //xval=xval+.00025;
                 }
 
         }
 }
   
 
-void PanlCB(w, client_data, call_data)
+void SaveCB(w, client_data, call_data)
         Widget  w;
         int     *client_data;
         XmAnyCallbackStruct     *call_data;
@@ -1202,17 +777,6 @@ void PanlCB(w, client_data, call_data)
                 break;
         case 3: /* Disarm */
                 if (flag == 1) {        /* finished with things, now exit */
-		   /*
-                   if(rtype == 0) delta = (plot.stop - plot.start ) / 10;
-                   else delta = 64;
-                   plot.start = plot.start - delta;
-		   //if (plot.start < 0) plot.start = 0;
-                   if (plot.start < plot.istart) plot.start = plot.istart;
-                   plot.stop = plot.stop - delta;
-		   if (plot.stop < 0) plot.stop = 10;
-                   if(XtIsRealized(canvas))
-                   XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
-		   */
 		   save_xval = xval;
 		   save_yval = yval;
                 }
@@ -1220,7 +784,7 @@ void PanlCB(w, client_data, call_data)
         }
 }
 
-void PanrCB(w, client_data, call_data)
+void RestoreCB(w, client_data, call_data)
         Widget  w;
         int     *client_data;
         XmAnyCallbackStruct     *call_data;
@@ -1243,21 +807,9 @@ void PanrCB(w, client_data, call_data)
                 break;
         case 3: /* Disarm */
                 if (flag == 1) {        /* finished with things, now exit */
-		   /*
-                   if(rtype == 0) delta = (plot.stop - plot.start ) / 10;
-                   else delta = 64;
-                   plot.start = plot.start + delta;
-                   if (plot.start > plot.istop) plot.start = plot.istop - 10;
-                   plot.stop = plot.stop + delta;
-                   if (plot.stop < plot.start) plot.stop = plot.istop;
-		   if (plot.stop > plot.istop) plot.stop = plot.istop;
-                   if(XtIsRealized(canvas))
-                   XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
-		   */
 		   xval = save_xval;
 		   yval = save_yval;
                    if ((input = fopen("switcher.tandem.data","w")) != NULL) {
-                      //fprintf(input,"%s %d %f %f\n","inflection",0,xval*3.0,yval*3.0);
                       fprintf(input,"%s %d %f %f\n","switcher",1,xval*SHUNT_FACTOR,yval);
                       fclose (input);
                       }
@@ -1266,156 +818,8 @@ void PanrCB(w, client_data, call_data)
         }
 }
 
-void AutoCB(w, client_data, call_data)
-        Widget  w;
-        int     *client_data;
-        XmAnyCallbackStruct     *call_data;
-{
-        static int flag;
-        int i;
-        i = client_data;
-
-        switch(i) {
-
-        case 1: /* Arm */
-
-                flag = 0;       /* if we disarm now, nothing happens */
-                break;
-
-        case 2: /* Activate */
-
-                flag = 1;       /* user released button, stand by to quit */
-                break;
-
-        case 3: /* Disarm */
-
-                if (flag == 1) {        /* finished with things, now exit */
-		/*
-                   if(plot.autoy == 0) plot.autoy = 1; 
-                   else 
-                      {
-                      plot.autoy = 0;
-                      plot.max = 8;
-                      }   
-                   if(XtIsRealized(canvas))
-                   XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
-                */
-		highres = 4;
-		}
-
-        }
-}
-
-void YupCB(w, client_data, call_data)
-        Widget  w;
-        int     *client_data;
-        XmAnyCallbackStruct     *call_data;
-{
-        static int flag;
-        int i;
-        i = client_data;
-
-        switch(i) {
-
-        case 1: /* Arm */
-
-                flag = 0;       /* if we disarm now, nothing happens */
-                break;
-
-        case 2: /* Activate */
-
-                flag = 1;       /* user released button, stand by to quit */
-                break;
-
-        case 3: /* Disarm */
-
-                if (flag == 1) {        /* finished with things, now exit */
-		   /*
-                   plot.autoy = 0;
-                   plot.max = plot.max * 2;
-                   if(XtIsRealized(canvas))
-                   XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
-		   */
-		   highres = 6;
-                }
-
-        }
-}
-
-void YdnCB(w, client_data, call_data)
-        Widget  w;
-        int     *client_data;
-        XmAnyCallbackStruct     *call_data;
-{
-        static int flag;
-        int i;
-        i = client_data;
-
-        switch(i) {
-
-        case 1: /* Arm */
-
-                flag = 0;       /* if we disarm now, nothing happens */
-                break;
-
-        case 2: /* Activate */
-
-                flag = 1;       /* user released button, stand by to quit */
-                break;
-
-        case 3: /* Disarm */
-
-                if (flag == 1) {        /* finished with things, now exit */
-		   /*
-                   plot.autoy = 0;
-                   if(plot.max > 2)plot.max = plot.max / 2;
-                   if(XtIsRealized(canvas))
-                   XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
-		   */
-		   highres = 5;
-                }
-
-        }
-}
-
-void HomeCB(w, client_data, call_data)
-        Widget  w;
-        int     *client_data;
-        XmAnyCallbackStruct     *call_data;
-{
-        static int flag;
-        int i;
-        i = client_data;
-
-        switch(i) {
-
-        case 1: /* Arm */
-
-                flag = 0;       /* if we disarm now, nothing happens */
-                break;
-
-        case 2: /* Activate */
-
-                flag = 1;       /* user released button, stand by to quit */
-                break;
-
-        case 3: /* Disarm */
-
-                if (flag == 1) {        /* finished with things, now exit */
-
-                   plot.autoy = 1;
-                   //plot.start = 0;
-                   plot.start = plot.istart;
-                   plot.stop = plot.istop;
-		   highres=0;
-                   if(XtIsRealized(canvas))
-		   XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
-                }
-
-        }
-}
   
-void RefCB(w, client_data, call_data)
+void LockCB(w, client_data, call_data)
         Widget  w;
         int     *client_data;
         XmAnyCallbackStruct     *call_data;
@@ -1450,7 +854,6 @@ void TimeOutCB(client_data, call_data )
 	Widget client_data;
 	XtIntervalId *call_data;
 {
-	//int time,j;
 	int j,flag,input;
 	float new_xval, new_yval;
 	char device_name[100];
@@ -1464,7 +867,6 @@ void TimeOutCB(client_data, call_data )
           {
           if(--refloops == 0)
             {
-            //XtAppAddTimeOut(XtWidgetToApplicationContext(client_data),time,QuitCB,3);
             if(shmctl(id,IPC_RMID,0) == -1)
               {
               printf("\nshmctl release failed in QUIT.\n");
@@ -1472,12 +874,8 @@ void TimeOutCB(client_data, call_data )
             exit(0);
             }
           }
-// 	if (mousemoved == 0) updatedata(&plot);
-        //if(halt_update == 0)
-        //  {
           if(XtIsRealized(canvas))
            XClearArea(XtDisplay(canvas),XtWindow(canvas),0,0,0,0,TRUE);
-        //  }
 
      if(plot.autoy == 1) {
         plot.max = 16;
@@ -1486,26 +884,6 @@ void TimeOutCB(client_data, call_data )
                 }
         }
 
-       /* 
-	time = plot.stop - plot.start;
-        if (time > 1024) time = 2000;
-        if (time > 5000) time = 3000;
-        if (time > 10000) time = 5000;
-	if (time <  512) time = 512;
-        if (rtype > 0) time = 2000;
-        //time=500;
-
-        time=50;
-        
-        rate_factor = (float)time/1000.0; 
-
-        if (mousemoved > 0)
-           {
-           time=50;
-           if(rtype > 0) time = 1000;
-           mousemoved--;
-           }
-	*/
 	if (rubberband == 1) time = 050;
 	else { 
              time=50;
@@ -1515,12 +893,9 @@ void TimeOutCB(client_data, call_data )
 		fclose (input);
 	        }
 	     if(flag == 1) {
-		//xval = new_xval / 3.0;  
-		//yval = new_yval / 3.0;
                 xval = new_xval/SHUNT_FACTOR;
                 ixval = (xval/xvalmax)*1000000;
                 printf("ixval = %06d\n",ixval);
-		//sprintf(x_command,"da 0 %i",(xval*1000000)/xvalmax);
                 sprintf(x_command,"da 0 %06d",ixval);
 
 	         // write messages to the Danfysik                    
@@ -1530,7 +905,6 @@ void TimeOutCB(client_data, call_data )
 
 	        }
 	     if ((input = fopen("switcher.tandem.data","w")) != NULL) {
-	        //fprintf(input,"%s %d %f %f\n","inflection",0,xval*3.0,yval*3.0);
                 fprintf(input,"%s %d %f %f\n","switcher",0,xval*SHUNT_FACTOR,yval);
 	        fclose (input);
 	        }
@@ -1627,21 +1001,14 @@ void RedrawCB( w, client_data, call_data )
 	oldx = 0;   
 	oldy = new_height - 20;
         dz = 2;
-        //if((plot.stop-plot.start) > 500) dz=1;
-        //if((plot.stop-plot.start) < 100) dz=3;
         i = 0; 
 	if(rtype == 0)
             {
-            //XAllocNamedColor (dsply,cmap,"Black",&col,&unused);
-            //XSetForeground(dsply,SimpleGC,col.pixel);
             for (j = plot.start; j <= plot.stop; j++) 
 		{
                 sum += plot.data[j];
-                // if(j == mouse_channel)mouse_value=plot.data[j];
                 if(plot.max > 8)
-                   //quadmod dataline
                    y = (new_height - 20)/2;
-                   //y = (new_height - 20) - (plot.data[j] * ystep);
                 else
                    y = (new_height - 20) -
                        ((log10((double)plot.data[j]+1) * ystep) * 100.0);
@@ -1694,15 +1061,6 @@ void RedrawCB( w, client_data, call_data )
 		    XDrawArc(dsply,drawable,SimpleGC,mouse_channel-8,new_height-20-mouse_value-8, 16,  16, 0, 360*64);
                     XDrawLine(dsply,drawable,SimpleGC,mouse_channel-7,new_height-15-mouse_value,mouse_channel,new_height-5-mouse_value);
                     XDrawLine(dsply,drawable,SimpleGC,mouse_channel+7,new_height-15-mouse_value,mouse_channel,new_height-5-mouse_value);
-		    //XDrawArc(dsply,drawable,SimpleGC,mouse_channel-25,new_height-20-mouse_value-25, 50, 50, 0, 360*64);
-		    // indicate expanded mode
-		    //XAllocNamedColor (dsply,cmap,colors[j],&col,&unused);
-		    //XSetForeground(dsply,SimpleGC,ouZcolor[highres+3]);
-		    //XFillRectangle(dsply,drawable,SimpleGC,x,y,new_width/20,new_height/20);
-		    //sprintf(strbuff,"%d",highres);
-		    //XSetForeground(dsply,SimpleGC,ouBlack);
-		    //XDrawString(dsply,drawable,SimpleGC,x+1,y+(new_height/20)-2,strbuff,strlen(strbuff));
-                    //XAllocNamedColor (dsply,cmap,"Black",&col,&unused);
                     XSetForeground(dsply,SimpleGC,ouBlack);
 		    XDrawString(dsply,drawable,SimpleGC,mouse_channel,new_height-60-mouse_value+22,strbuff,strlen(strbuff));
                     }
@@ -1761,32 +1119,19 @@ void RedrawCB( w, client_data, call_data )
                 sum += plot.data[j];
                 iy = j/64;
                 ix = j-(64*iy);
-                //x = ((j-(64*(j/64))) * xstep)+(float)new_width*0.05;
                 x = (ix * xstep)+(float)new_width*0.05;
                 y = (((float)new_height*0.9) - ((j/64) * ystep));
-                //if ((ix==curmouse_x) && (iy==curmouse_y))
-                //      mouse_value=plot.data[j];
                 z=((float)plot.data[j] / (float)plot.max)*XSCALE;
                 if(z > 15) z = 15;
-                //if(z > 0)
                 if(plot.data[j] > 0)
                     {
                     if(z > 0) {
-                        //dec XAllocNamedColor (dsply,cmap,colors[z],&col,&unused);
-                        //dec XSetForeground(dsply,SimpleGC,col.pixel);
                         XSetForeground(dsply,SimpleGC,ouZcolor[z]);
                         XFillRectangle(dsply,drawable,SimpleGC,x,y,xstep*0.8,ystep*0.8);
                     }
-                    /*
-                    else{
-                        //XAllocNamedColor (dsply,cmap,"Gray",&col,&unused);
-                        XSetForeground(dsply,SimpleGC,ouGray);
-                        XFillRectangle(dsply,drawable,SimpleGC,x,y,xstep*0.2,ystep*0.2);
-                        }
-                    */
+
                     if ((ix==curmouse_x) && (iy==curmouse_y))
                        {
-                       //XAllocNamedColor (dsply,cmap,"White",&col,&unused);
                        XSetForeground(dsply,SimpleGC,ouWhite);
                        XDrawRectangle(dsply,drawable,SimpleGC,
                             x-(0.1*xstep), y-(0.1*ystep),xstep,ystep);
@@ -1795,7 +1140,6 @@ void RedrawCB( w, client_data, call_data )
                        slystep = (new_height - 20)/1.5;
                        slystep = slystep / (2.0*plot.max);
                        sli=0;
-                       //XAllocNamedColor (dsply,cmap,"Cyan",&col,&unused);
                        XSetForeground(dsply,SimpleGC,ouCyan);
                        sprintf(strbuff,"x(y=%d) z(%d,%d)=%d",iy,ix,iy,mouse_value);
                        sly0=new_height-(new_height*0.1);
@@ -1815,11 +1159,9 @@ void RedrawCB( w, client_data, call_data )
                             XDrawLine(dsply,drawable,SimpleGC,slx-1,sly,slx+1,sly);
                             if(sli==ix) 
                                 { 
-                                //XAllocNamedColor (dsply,cmap,"Yellow",&col,&unused);
                                 XSetForeground(dsply,SimpleGC,ouYellow);
                                 XDrawLine(dsply,drawable,SimpleGC,slx,sly-5,slx,sly+5);
                                 XDrawLine(dsply,drawable,SimpleGC,slx-5,sly,slx+5,sly);
-                                //XAllocNamedColor (dsply,cmap,"Cyan",&col,&unused);
                                 XSetForeground(dsply,SimpleGC,ouCyan);
 				XDrawLine(dsply,drawable,SimpleGC,
                                          (float)new_width*0.05,y+ystep/2,
@@ -1832,7 +1174,6 @@ void RedrawCB( w, client_data, call_data )
                             sli++;
                             }
                        sli=0;
-                       //XAllocNamedColor (dsply,cmap,"Yellow",&col,&unused);
                        XSetForeground(dsply,SimpleGC,ouYellow);
                        sprintf(strbuff,"y(x=%d) z(%d,%d)=%d",ix,ix,iy,mouse_value);
                        sly0=(new_height-(new_height*0.1))/2;
@@ -1843,12 +1184,10 @@ void RedrawCB( w, client_data, call_data )
                                 new_width+64*slxstep,sly0);
                        XDrawLine(dsply,drawable,SimpleGC,
                                 new_width,sly0,new_width,0.2*sly0);
-                       //XAllocNamedColor (dsply,cmap,"White",&col,&unused);
                                 XSetForeground(dsply,SimpleGC,ouWhite);
                        sprintf(strbuff,"Z Max = %d",plot.max);
                        XDrawString(dsply,drawable,SimpleGC,
                             new_width,0.1*sly0,strbuff,strlen(strbuff));
-                       //XAllocNamedColor (dsply,cmap,"Yellow",&col,&unused);
                                 XSetForeground(dsply,SimpleGC,ouYellow);
                        for (slj=ix; slj<4096; slj+=64)
                             {
@@ -1859,11 +1198,9 @@ void RedrawCB( w, client_data, call_data )
                             XDrawLine(dsply,drawable,SimpleGC,slx-1,sly,slx+1,sly);
                             if(sli==iy) 
                                 {
-                                //XAllocNamedColor (dsply,cmap,"White",&col,&unused);
                                 XSetForeground(dsply,SimpleGC,ouWhite);
                                 XDrawLine(dsply,drawable,SimpleGC,slx,sly-5,slx,sly+5);
                                 XDrawLine(dsply,drawable,SimpleGC,slx-5,sly,slx+5,sly);
-                                //XAllocNamedColor (dsply,cmap,"Yellow",&col,&unused);
                                 XSetForeground(dsply,SimpleGC,ouYellow);
                                 XDrawLine(dsply,drawable,SimpleGC,
                                           x+xstep/2,(((float)new_height*0.9)-(63*ystep)),
@@ -1876,14 +1213,11 @@ void RedrawCB( w, client_data, call_data )
                             sli++;
                             }
                        }
-                    //XAllocNamedColor (dsply,cmap,"Black",&col,&unused);
-                    //XSetForeground(dsply,SimpleGC,col.pixel);
                     }
                 i++;
 		oldx = x;
 		oldy = y;
 		}
-            //XAllocNamedColor (dsply,cmap,"White",&col,&unused);
             XSetForeground(dsply,SimpleGC,ouWhite);
             new_width=slwidth;
             }
@@ -1895,13 +1229,10 @@ void RedrawCB( w, client_data, call_data )
             ystep = new_height - 20;
             ystep = ystep / plot.max;
             i = 0;
-            //xstep=xstep/2.0;
             thresh=((float)plot.max*0.01)+1;
             ystep=ystep/2.0;
-            //XAllocNamedColor (dsply,cmap,"White",&col,&unused);
             XSetForeground(dsply,SimpleGC,ouWhite);
             xstep = ((float)new_width*0.9)/128.0;
-            //ystep = ((float)new_height*0.8)/64.0;
             for (j = plot.start; j <= plot.stop; j++)
                 {
                 iy = j/64;
@@ -1909,11 +1240,9 @@ void RedrawCB( w, client_data, call_data )
                 iz = plot.data[j];
                 //x = ((j-(64*(j/64))) * xstep)+(float)new_width*0.05;
                 x = ((ix * xstep)+(float)new_width*0.05)+((float)iy*xstep);
-                //y = ((((float)new_height*0.9) - ((j/64) * ystep)))-((float)iy*ystep);
                 
                 
                 sum += iz;
-                //if(j == mouse_channel)mouse_value=plot.data[j];
                 y = (new_height - 40) - (iz * ystep)-
                     (((float)(new_height-40)/128.0)*iy);
                 if(iz == 0) XDrawPoint(dsply,drawable,SimpleGC,x,y);
@@ -1924,27 +1253,18 @@ void RedrawCB( w, client_data, call_data )
                   XDrawLine(dsply,drawable,SimpleGC,x-1,y,x+1,y);
                   if(ix != 0)XDrawLine(dsply,drawable,SimpleGC,oldx,oldy,x,y);
                   }
-                //i++;
                 oldx = x;
                 oldy = y;
                 }
             }
-  //mouse_channel = (((float)current_x/(float)new_width)*((plot.stop-plot.start)+1))+plot.start;
-  //mouse_channel=xval*100.0;
-  //mouse_value=yval*100.0;
-  //dec change scale factor
-  //mouse_channel=(xval/XSCALE)*(float)new_width;
   mouse_channel=(xval/XSCALE)*(float)new_width;
   mouse_value=(yval/YSCALE)*(float)(new_height-36);
-  //mouse_value=0.5*(float)(new_height-36);
   if(rtype == 0)
     {
     if(new_width > size_thresh)
       {
-      //sprintf(strbuff,"Start = %d",plot.start);
       sprintf(strbuff,"0");
       XDrawString(dsply,drawable,SimpleGC,2,new_height-5,strbuff,strlen(strbuff));
-      //sprintf(strbuff,"Cursor(chan %d = %d)",mouse_channel,mouse_value);
       sprintf(strbuff,"50");
       XDrawString(dsply,drawable,SimpleGC,1*((new_width-(strlen(strbuff)*7)))/5,new_height-5,strbuff,strlen(strbuff));
       sprintf(strbuff,"100");
@@ -1965,7 +1285,6 @@ void RedrawCB( w, client_data, call_data )
       {
       sprintf(strbuff,"%d",plot.start);
       XDrawString(dsply,drawable,SimpleGC,10,new_height-5,strbuff,strlen(strbuff));
-      //sprintf(strbuff,"(Chan%f=%f)",xval,yval);
       XDrawString(dsply,drawable,SimpleGC,(new_width-(strlen(strbuff)*7))/2,new_height-5,strbuff,strlen(strbuff));
       sprintf(strbuff,"%d",plot.stop);
       XDrawString(dsply,drawable,SimpleGC,new_width-5-(strlen(strbuff)*7),new_height-5,strbuff,strlen(strbuff));
@@ -1985,37 +1304,8 @@ void RedrawCB( w, client_data, call_data )
 
   if((rtype == 0) && (plot.max > 8))
     {
-    //if(new_width > size_thresh) sprintf(strbuff,"MaxCounts = %d",plot.max);
-    //sprintf(strbuff,"6 Amps");
-    //else sprintf(strbuff,"Y=%d",plot.max);
-    //sprintf(strbuff,"Analyzer Magnet Current = %7.4f Amps (%8.6f MHz)",SHUNT_FACTOR*xval,0.259875*SHUNT_FACTOR*xval);
     sprintf(strbuff,"Switcher Magnet Current = %7.4f Amps",SHUNT_FACTOR*xval);
     XDrawString(dsply,drawable,SimpleGC,10,12,strbuff,strlen(strbuff));
-    //if(new_width > size_thresh) 
-    //  sprintf(strbuff,"Sum = %d Counts, %d Channels",sum,plot.stop-plot.start+1);
-    //else sprintf(strbuff,"Sum=%d",sum);
-    //XDrawString(dsply,drawable,SimpleGC,new_width-5-(strlen(strbuff)*7),
-    //           12,strbuff,strlen(strbuff));
-    //if(new_width > size_thresh)
-    //  {
-      //sprintf(strbuff,"Rate=%d",rate);
-      //XDrawString(dsply,drawable,SimpleGC,new_width/3,
-      //         12,strbuff,strlen(strbuff));
-    //  }
-    //else
-    //  {
-    //  sprintf(strbuff,"Rate=%d",rate);
-    //  XDrawString(dsply,drawable,SimpleGC,(new_width-(strlen(strbuff)*7))/2,
-    //           12,strbuff,strlen(strbuff));
-    //  }
-    // section to draw grid for linear single parameter histogram 
-    /*
-    XSetForeground(dsply,SimpleGC,ouGray);
-    for (i=1;i<4;i++) XDrawLine(dsply,drawable,SimpleGC,0,15+(i*((new_height-20-15)/4)),
-                      10,15+(i*((new_height-20-15)/4)));
-    for (i=1;i<4;i++) XDrawLine(dsply,drawable,SimpleGC,new_width-10,15+(i*((new_height-20-15)/4)),
-                      new_width,15+(i*((new_height-20-15)/4)));
-    */
     XSetForeground(dsply,SimpleGC,ouBlack);
     }
   else if((rtype == 0) && (plot.max <= 8))
@@ -2057,9 +1347,6 @@ void RedrawCB( w, client_data, call_data )
       new_height-22);
   XDrawLine(dsply,drawable,SimpleGC,(5*new_width)/5,new_height-18,(5*new_width)/5,
       new_height-22);
-  //XDrawLine(dsply,drawable,SimpleGC,new_width/2,new_height-18,new_width/2,
-  //    new_height-22);
-  //XAllocNamedColor (dsply,cmap,"Black",&col,&unused);
 
   XSetForeground(dsply,SimpleGC,ouCyan);
 
@@ -2087,14 +1374,6 @@ void set_color(w, client_data, call_data)
    Display *dpy = XtDisplay (w);
    Colormap cmap = DefaultColormapOfScreen (XtScreen (w));
    XColor  col, unused;
-   /*
-   if(!XAllocNamedColor (dpy,cmap,color,&col,&unused)) {
-      char buf[32];
-      sprintf (buf, "Can't alloc %s", color);
-      XtWarning (buf);
-      return;
-   }
-   */
    XSetForeground (dpy,SimpleGC,col.pixel);
 }
 
@@ -2118,49 +1397,15 @@ int readdata(disk,tag,plot)
 	char 	fname[128];
 	int	rdisk,rtag,rstart,rstop,rdate,rtime;
 	int	i,j,datum;
-/*
-	printf("Reading data for disk %d tag %d", disk,tag);
-  
-	sprintf(fname,"data/plotbuffer");
 
-	if ((input = fopen(fname,"r")) == NULL) {
-		perror("data file open failed");
-		return(-1);
-	}
-
-	fscanf(input,"%d %d %d %d %d %d",&rdisk,&rtag,&rstart,&rstop,
-					&rdate,&rtime);
-  
-	printf("readdata: disk %d tag %d start %d stop %d date %d time %d\n",
-			rdisk, rtag, rstart, rstop, rdate, rtime);
-*/
-	// printf("readdata shmatt id = %d. \n",id);
-	/*
-	if((int) (shmpltptr = (char *) shmat(id,0,0)) == -1)
-		{
-		printf("\nshmatt failed in readdata.\n");
-		exit(0);
-		}
-	*/
 #ifdef DEBUGSHM
         printf("\nREADdata attaching %d\n",id);
 #endif
-	//plotbufferptr = (struct plotbuffer *) shmpltptr;
-	//rdate = plotbufferptr->savdat;
-	//rtime = plotbufferptr->savtim;
-	//rstart = plotbufferptr->start;
-	//rstop = plotbufferptr->stop;
-        //rtype = plotbufferptr->type;
-        //if(rtype == 5) rtype = 0;
 	rstart=0;
 	rstop=1000;
 	rtype=0;
 	if(rtype != 1) rtype = 0;
         i = (int)rstart;
-//	i = 0;
-/* 	fscanf(input,"%8d",&datum);
-	plot->min = datum;
-*/
 	//datum=plotbufferptr->data[i];
 	plot->min = 0;
 	plot->max = 1000;
@@ -2168,117 +1413,16 @@ int readdata(disk,tag,plot)
 	for ( j = rstart+1; j <= rstop; j++) {
 		//datum = plotbufferptr->data[i];    
 		plot->data[i++] = j;
-/*		if (datum < plot->min) plot->min = datum;
-*/
-		//if (datum > plot->max) plot->max = datum;
 	}
 	plot->start = rstart;
         plot->istart = rstart;
 	plot->stop = rstop;
         plot->istop = rstop;
-/*
-	plot->start = 0;
-	plot->istart = 0;
-	plot->stop = i - 1;
-	plot->istop = i - 1;
-*/
 	plot->autoy = 1;
-/*	printf("Maximum counts %d\n",plot->max); */
-/*      shmpltptr->inuse = 0; */
-	//plotbufferptr->inuse = 0;
-//	if(shmdt(shmpltptr) == -1)
-//	{
-//	printf("\nshmdt failed in readdata.\n");
-//	}	
-#ifdef DEBUGSHM
-        printf("\nREADdata detatching %d\n",id);
-#endif
-/*	if(shmctl(id,IPC_RMID,0) == -1)
-	{
-	printf("\nshmctl release failed in readdata.\n");
-	}
-*/
 	return(0);
 }
 
 
-int updatedata(plot)
-        struct dataplot *plot;
-{
-        int     rdisk,rtag,rstart,rstop,rdate,rtime;
-        int     i,j,datum;
-        if(realtime == 0) return(0);
-  	//printf("signalling process %d to refresh\n",parent); 
-	//kill(parent,SIGUSR2);
-        if((int) (shmpltptr = (char *) shmat(id,0,0)) == -1)
-                {
-                printf("\nshmatt failed in updatedata. id = %d.\n",id);
-                exit(0);
-                }
-#ifdef DEBUGSHM
-        printf("\nUPDATEdata attaching %d\n",id);
-#endif
-        plotbufferptr = (struct plotbuffer *) shmpltptr;
-        plotbufferptr->refid = 0;
-        plotbufferptr->inuse = 1;
-        kill(parent,SIGUSR2);
-        for(i=0;i<100000000;i++)
-          {
-          if(plotbufferptr->inuse == 0) goto active;
-          }
-        realtime = 0;
-        goto notactive;
-active:
-#ifdef DEBUGSHM
-        printf("\nFound Active. id = %d, returned refid = %d\n",id,plotbufferptr->refid);
-#endif
-        if(plotbufferptr->refid == id)
-          {
-          rstart = plotbufferptr->start;
-          rstop = plotbufferptr->stop;
-          i = 0;
-          datum=plotbufferptr->data[i];
-          plot->min = 0;
-          /* plot->max = datum; */
-          plot->data[i++] = datum;
-          for ( j = rstart+1; j <= rstop; j++) 
-            {
-            datum = plotbufferptr->data[i];
-            plot->data[i++] = datum;
-            /* if (datum > plot->max) plot->max = datum; */
-            }
-          //printf("\nrefresh flag = %d\n",plotbufferptr->data[524287]);
-          plot->data[524287] = 0;
-          if(plotbufferptr->data[524287]==524287) 
-            {
-            i=0;
-            for ( j = rstart+1; j <= rstop; j++) 
-                {
-                datum = plotbufferptr->data[i+524288];
-                plot->data[524288+i++] = datum;
-                /* if (datum > plot->max) plot->max = datum; */
-                }
-            plot->data[524287] = 524287;
-            }
-          }
-notactive:
-//        if(shmdt(shmpltptr) == -1)
-//          {
-//          printf("\nshmdt failed in updatedata.\n");
-//          }
-#ifdef DEBUGSHM
-        printf("\nUPDATEdata detatching %d\n",id);
-#endif
-/*      if(shmctl(id,IPC_RMID,0) == -1)
-          {
-          printf("\nshmctl release failed in updatedata.\n");
-          }
-*/
-
-        return(0);
-}
-  
-                             
 /* Taken from Young, pg 141. */
 void xs_wprintf(va_alist)
 	va_dcl
