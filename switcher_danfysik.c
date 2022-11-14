@@ -40,7 +40,7 @@
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "../oual.h"
+#include "oual.h"
 #include "/usr/include/math.h"
   
 #include <Xm/DrawingA.h>
