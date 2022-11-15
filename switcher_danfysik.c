@@ -105,7 +105,7 @@ void LockCB();
 void QuitCB();
 void RedrawCB();
 void ResizeCB();
-void xs_wprintf();
+void xs_wprintf(Widget wid, char *fmt, ...);
 void TimeOutCB();
 int  readdata();
 void start_rubber_band();
@@ -678,7 +678,7 @@ void QuitCB(w, client_data, call_data)
 //        drawable = XtWindow(w);
 
         static int flag;
-        int k;
+        int k = 0;
 //        int x, y, b, z;
         int i;
         i = (long) client_data;
@@ -1446,7 +1446,7 @@ void set_color(w, client_data, call_data)
 //   String color = (String) client_data;
    Display *dpy = XtDisplay (w);
 //   Colormap cmap = DefaultColormapOfScreen (XtScreen (w));
-   XColor  col;//, unused;
+   XColor  col; //, unused;
    XSetForeground (dpy,SimpleGC,col.pixel);
 }
 
@@ -1498,7 +1498,8 @@ int readdata(disk,tag,plot)
 
 
 /* Taken from Young, pg 141. */
-void xs_wprintf(va_alist)
+//void xs_wprintf(va_alist)
+void xs_wprintf(Widget wid, char *fmt, ...)
 //	va_dcl
 {
 	Widget	w;
@@ -1510,7 +1511,7 @@ void xs_wprintf(va_alist)
 	int	n,rc;
         size_t  hlen;
 
-	va_start(args, sizeof(args));
+	va_start(args, fmt);
 
 	w = va_arg(args, Widget);	/* get the widget to write to */
 	if (!XtIsSubclass( w, xmLabelWidgetClass)) {
