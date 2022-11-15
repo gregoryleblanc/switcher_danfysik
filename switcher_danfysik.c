@@ -29,7 +29,7 @@
  *   magnet current.
  *----------------------------------------------------------------------------*/
 
-#define _BSD_SOURCE  // needed to disable CRTSCTS for serial port
+#define _GNU_SOURCE  // needed to disable CRTSCTS for serial port
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,9 +59,11 @@
 #include <X11/Intrinsic.h>
 #include <X11/StringDefs.h>
 #include <X11/cursorfont.h>
+#include <X11/XKBlib.h>
 
 #include <termios.h>
 #include <unistd.h>
+
 
 
 // following for rpc command support to HP
@@ -164,6 +166,24 @@ typedef struct {
 	unsigned data[OUAL_MAX_DEFINE_LENGTH];
 	} oual_plot;
 */
+
+GC xs_create_xor_gc(w)
+        Widget        w;
+{
+    XGCValues values;
+    GC    gc;
+    Arg   wargs[10];
+    XtSetArg(wargs[0], XtNforeground, &values.foreground);
+    XtSetArg(wargs[1], XtNbackground, &values.background);
+    XtGetValues(w, wargs,2);
+    values.foreground = values.foreground ^ values.background;
+    values.line_style = LineSolid; //LineOnOffDash
+    values.function = GXxor;
+    gc = XtGetGC(w,GCForeground | GCBackground |
+                   GCFunction | GCLineStyle, &values);
+    return gc;
+}
+
 char *shmpltptr;
 struct plotbuffer *plotbufferptr;
 
@@ -173,8 +193,8 @@ int main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	Widget 	toplevel, frame, infobar, quitbutton, ex1, ex2, ex3, ex4, home;
-	Widget  fine, coarse, save, restore, yauto, yup, ydn, lock;
+	Widget 	toplevel, frame, infobar, quitbutton; //ex1, ex2, ex3, ex4, home,
+	Widget  fine, coarse, save, restore, lock; //yup, ydn, yauto
         rubber_band_data data;
 	XtAppContext app;
 	XSetWindowAttributes	attrs;
@@ -183,11 +203,11 @@ int main(argc, argv)
 	extern GC	SimpleGC;
 	XGCValues	gcvalues;
 	int	n;
- 	int  	j;
+// 	int  	j;
 	unsigned long	valuemask;
-	char command[100];
+//	char command[100];
 
-        char xvalstring[21];
+//        char xvalstring[21];
 
 	toplevel = XtVaAppInitialize(&app, "Simple", NULL, 0, 
 				&argc, argv, NULL, NULL);
@@ -267,9 +287,9 @@ int main(argc, argv)
         XtSetArg(wargs[n], XmNbackground, 256*256*255+256*211+155); n++; // burlywood
         XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
 	quitbutton = XmCreatePushButton(infobar, "quitbutton", wargs, n);
-	XtAddCallback(quitbutton, XmNarmCallback, QuitCB, 1);
-	XtAddCallback(quitbutton, XmNactivateCallback, QuitCB, 2);
-	XtAddCallback(quitbutton, XmNdisarmCallback, QuitCB, 3);
+	XtAddCallback(quitbutton, XmNarmCallback, QuitCB, (XtPointer) 1);
+	XtAddCallback(quitbutton, XmNactivateCallback, QuitCB, (XtPointer) 2);
+	XtAddCallback(quitbutton, XmNdisarmCallback, QuitCB, (XtPointer) 3);
 	XtManageChild(quitbutton);
   
 // define the "Fine" button
@@ -282,9 +302,9 @@ int main(argc, argv)
         XtSetArg(wargs[n], XmNbackground, 256*256*255+256*236+139); n++; // lightgoldenrod
         XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
         fine = XmCreatePushButton(infobar, "fine", wargs, n);
-        XtAddCallback(fine, XmNarmCallback, FineCB, 1);
-        XtAddCallback(fine, XmNactivateCallback, FineCB, 2);
-        XtAddCallback(fine, XmNdisarmCallback, FineCB, 3);
+        XtAddCallback(fine, XmNarmCallback, FineCB, (XtPointer) 1);
+        XtAddCallback(fine, XmNactivateCallback, FineCB, (XtPointer) 2);
+        XtAddCallback(fine, XmNdisarmCallback, FineCB, (XtPointer) 3);
         XtManageChild(fine);
 
 // define the "Coarse" button
@@ -296,9 +316,9 @@ int main(argc, argv)
         XtSetArg(wargs[n], XmNbackground, 0x00ee76); n++;
         XtSetArg(wargs[n], XmNforeground, 0x000000); n++;
         coarse = XmCreatePushButton(infobar, "coarse", wargs, n);
-        XtAddCallback(coarse, XmNarmCallback, CoarseCB, 1);
-        XtAddCallback(coarse, XmNactivateCallback, CoarseCB, 2);
-        XtAddCallback(coarse, XmNdisarmCallback, CoarseCB, 3);
+        XtAddCallback(coarse, XmNarmCallback, CoarseCB, (XtPointer) 1);
+        XtAddCallback(coarse, XmNactivateCallback, CoarseCB, (XtPointer) 2);
+        XtAddCallback(coarse, XmNdisarmCallback, CoarseCB, (XtPointer) 3);
         XtManageChild(coarse);
   
 // define the "Save" button
@@ -312,9 +332,9 @@ int main(argc, argv)
         XtSetArg(wargs[n], XmNbackground, 256*256*255+256*0+255); n++; // magenta
         XtSetArg(wargs[n], XmNforeground, 0xffffff); n++;
         save = XmCreatePushButton(infobar, "save", wargs, n);
-        XtAddCallback(save, XmNarmCallback, SaveCB, 1);
-        XtAddCallback(save, XmNactivateCallback, SaveCB, 2);
-        XtAddCallback(save, XmNdisarmCallback, SaveCB, 3);
+        XtAddCallback(save, XmNarmCallback, SaveCB, (XtPointer) 1);
+        XtAddCallback(save, XmNactivateCallback, SaveCB, (XtPointer) 2);
+        XtAddCallback(save, XmNdisarmCallback, SaveCB, (XtPointer) 3);
         XtManageChild(save);
 
 // define the "Restore" button
@@ -328,9 +348,9 @@ int main(argc, argv)
         XtSetArg(wargs[n], XmNbackground, 256*256*230+256*99+99); n++; //indianred1
         XtSetArg(wargs[n], XmNforeground, 0xffffff); n++;
         restore = XmCreatePushButton(infobar, "restore", wargs, n);
-        XtAddCallback(restore, XmNarmCallback, RestoreCB, 1);
-        XtAddCallback(restore, XmNactivateCallback, RestoreCB, 2);
-        XtAddCallback(restore, XmNdisarmCallback, RestoreCB, 3);
+        XtAddCallback(restore, XmNarmCallback, RestoreCB, (XtPointer) 1);
+        XtAddCallback(restore, XmNactivateCallback, RestoreCB, (XtPointer) 2);
+        XtAddCallback(restore, XmNdisarmCallback, RestoreCB, (XtPointer) 3);
         XtManageChild(restore);
                             
 // define the "Lock" button
@@ -342,9 +362,9 @@ int main(argc, argv)
         XtSetArg(wargs[n], XmNbackground, 256*256*255+256*20+147); n++; //deeppink
         XtSetArg(wargs[n], XmNforeground, 0xffffff); n++;
         lock = XmCreatePushButton(infobar, "lock", wargs, n);
-        XtAddCallback(lock, XmNarmCallback, LockCB, 1);
-        XtAddCallback(lock, XmNactivateCallback, LockCB, 2);
-        XtAddCallback(lock, XmNdisarmCallback, LockCB, 3);
+        XtAddCallback(lock, XmNarmCallback, LockCB, (XtPointer) 1);
+        XtAddCallback(lock, XmNactivateCallback, LockCB, (XtPointer) 2);
+        XtAddCallback(lock, XmNdisarmCallback, LockCB, (XtPointer) 3);
         XtManageChild(lock);    
 
 	n = 0;
@@ -365,7 +385,7 @@ int main(argc, argv)
 	XtSetArg(wargs[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
 	XtSetArg(wargs[n], XmNtopWidget, infobar); n++;
 	canvas = XmCreateDrawingArea(frame, "canvas", wargs, n);
-	XtAddCallback(canvas, XmNresizeCallback, ResizeCB, 1);
+	XtAddCallback(canvas, XmNresizeCallback, ResizeCB, (XtPointer) 1);
         XtAddCallback(canvas, XmNexposeCallback, RedrawCB, "plot");
 
         XtAddEventHandler(canvas, ButtonPressMask, FALSE,
@@ -424,22 +444,6 @@ int main(argc, argv)
 	exit(0);
 }
 
-GC xs_create_xor_gc(w)
-    Widget        w;
-{
-XGCValues values;
-GC    gc;
-Arg   wargs[10];
-XtSetArg(wargs[0], XtNforeground, &values.foreground);
-XtSetArg(wargs[1], XtNbackground, &values.background);
-XtGetValues(w, wargs,2);
-values.foreground = values.foreground ^ values.background;
-values.line_style = LineSolid; //LineOnOffDash
-values.function = GXxor;
-gc = XtGetGC(w,GCForeground | GCBackground |
-             GCFunction | GCLineStyle, &values);
-return gc;
-}
 
 // section to follow mouse while updating the magnet value
 
@@ -465,7 +469,7 @@ XEvent            *event;
 {
   
 char x_command[100];
-char y_command[100];
+//char y_command[100];
 int dispx,dispy;
 
 if(magnet_lock == 1) return;
@@ -543,8 +547,8 @@ if(halt_update == 1)
   
   
   ixval = (xval/xvalmax)*1000000;
-  printf("ixval = %06d\n",ixval);
-  sprintf(x_command,"da 0 %06d",ixval);
+  printf("ixval = %06ld\n",ixval);
+  sprintf(x_command,"da 0 %06ld",ixval);
 
 // write messages to the Danfysik                    
  
@@ -566,9 +570,9 @@ Widget    w;
 rubber_band_data  *data;
 XEvent            *event;
 {
-int start,stop,len,j;
+//int start,stop,len,j;
 char x_command[100];
-char y_command[100];
+//char y_command[100];
 
 if(magnet_lock == 1) return;
 
@@ -611,8 +615,8 @@ if(rubberband  == 0) {
     }
   }
 ixval = (xval/xvalmax)*1000000;
-printf("ixval = %06d\n",ixval);
-sprintf(x_command,"da 0 %06d",ixval);
+printf("ixval = %06ld\n",ixval);
+sprintf(x_command,"da 0 %06ld",ixval);
 write(fd, x_command, strlen(x_command));
 write(fd, "\n", 1);
 rubberband=0;
@@ -630,16 +634,16 @@ current_y = event->xbutton.y;
 mousemoved = 2;
 }
 
-void enter_window(w,data,event)
+void enter_window(w,event)
 	Widget    w;
-	//focus_change_data *data;
+//	focus_change_data *data;
 	XEnterWindowEvent   *event;
 {
 	//printf("\nevent focus change type=%d mode=%d detail=%d same_screen=%d focus=%d\n",event->type,event->mode,event ->detail,event->same_screen, event->focus);
 
 }
 
-void exit_window(w,data,event)
+void exit_window(w,event)
 	        Widget    w;
 		//focus_change_data *data;
 		XLeaveWindowEvent   *event;
@@ -651,7 +655,7 @@ void exit_window(w,data,event)
 
 void forcedexit()
   {
-waittilldone:
+//waittilldone:
   close(fd);
   exit(0);
   }
@@ -663,20 +667,21 @@ void QuitCB(w, client_data, call_data)
         struct dataplot *client_data;
         XmDrawingAreaCallbackStruct *call_data;
 {
-        XColor  col, unused;
-        Colormap cmap = DefaultColormapOfScreen (XtScreen (w));
+//        XColor  col, unused;
+//        Colormap cmap = DefaultColormapOfScreen (XtScreen (w));
 
         extern GC       SimpleGC;
         char strbuff[100];
         Display *dsply;
-        Window drawable;
+//        Window drawable;
         dsply = XtDisplay(w);
-        drawable = XtWindow(w);
+//        drawable = XtWindow(w);
 
         static int flag;
-        int x, y, b, k, z;
+        int k;
+//        int x, y, b, z;
         int i;
-        i = client_data;
+        i = (long) client_data;
 
 
         /* This is done to assure all the activate callbacks are complete
@@ -706,11 +711,11 @@ void QuitCB(w, client_data, call_data)
                         XDrawString(XtDisplay(canvas),XtWindow(canvas),SimpleGC,20,new_height/2,strbuff,strlen(strbuff));
                         //XDrawString(dsply,drawable,SimpleGC,20,100,strbuff,strlen(strbuff));
                         XSetForeground(dsply,SimpleGC,ouBlack);
-                        z=rinptx (1, 0, 0, 1, &x, &y, &b, &k);
+//                        z=rinptx (1, 0, 0, 1, &x, &y, &b, &k);
                         //printf("\n%d %d %d %d %d",x,y,b,k,z);
                         if(k!=29){
                             printf("\nExpecting 29 but found %i",k);
-                            return 0;
+//                            return 0;
                             }
                         XtCloseDisplay(XtDisplay(w));
                         close(fd);
@@ -741,8 +746,8 @@ void FineCB(w, client_data, call_data)
 {
         static int flag;
         int i;
-	int delta;
-        i = client_data;
+//	int delta;
+        i = (long) client_data;
 
         if(magnet_lock == 1) return;
 
@@ -774,8 +779,8 @@ void CoarseCB(w, client_data, call_data)
 {
         static int flag;
         int i;
-        int delta;
-        i = client_data;
+//        int delta;
+        i = (long) client_data;
 
         if(magnet_lock == 1) return;
  
@@ -809,8 +814,8 @@ void SaveCB(w, client_data, call_data)
 {
         static int flag;
         int i;
-        int delta;
-        i = client_data;
+//        int delta;
+        i = (long) client_data;
 
         switch(i) {
 
@@ -836,9 +841,10 @@ void RestoreCB(w, client_data, call_data)
 {
         static int flag;
         int i;
-        int input;
-        int delta;
-        i = client_data;
+        FILE * input;
+//        int input;
+//        int delta;
+        i = (long) client_data;
 
         if(magnet_lock == 1) return;
 
@@ -855,7 +861,7 @@ void RestoreCB(w, client_data, call_data)
 		   xval = save_xval;
 		   yval = save_yval;
                    if ((input = fopen("switcher.tandem.data","w")) != NULL) {
-                      fprintf(input,"%s %d %f %f\n","switcher",1,xval*SHUNT_FACTOR,yval);
+                      fprintf(  input,"%s %d %f %f\n","switcher",1,xval*SHUNT_FACTOR,yval);
                       fclose (input);
                       }
                 }
@@ -873,8 +879,8 @@ void LockCB(w, client_data, call_data)
 {
         static int flag;
         int i;
-        int delta;
-        i = client_data;
+//        int delta;
+        i = (long) client_data;
 
         switch(i) {
 
@@ -901,11 +907,12 @@ void TimeOutCB(client_data, call_data )
 	Widget client_data;
 	XtIntervalId *call_data;
 {
-	int j,flag,input;
+	int j,flag;
+    FILE * input;
 	float new_xval, new_yval;
 	char device_name[100];
 	char x_command[100];
-	char y_command[100];
+//	char y_command[100];
 	
 	new_xval = xval;
 	new_yval = yval;
@@ -951,8 +958,8 @@ void TimeOutCB(client_data, call_data )
 	     if(flag == 1) {
                 xval = new_xval/SHUNT_FACTOR;
                 ixval = (xval/xvalmax)*1000000;
-                printf("ixval = %06d\n",ixval);
-                sprintf(x_command,"da 0 %06d",ixval);
+                printf("ixval = %06ld\n",ixval);
+                sprintf(x_command,"da 0 %06ld",ixval);
 
 	         // write messages to the Danfysik                    
 		
@@ -981,9 +988,9 @@ void RedrawCB( w, client_data, call_data )
         Colormap cmap = DefaultColormapOfScreen (XtScreen (w));
 
 	extern GC	SimpleGC;
-	int x, y, oldx, oldy, i, j, sum, width, z, dz;
-        int slx, sly, sli, slj, slwidth, sly0, slx0, temp;
-        int rx,ry,rb,rk;
+	int x, y, oldx, oldy, i, j, sum, z, dz;//width,
+        int slx, sly, sli, slj, slwidth, sly0;//, slx0, temp;
+//        int rx,ry,rb,rk;
 	float xstep, ystep;
         float slxstep, slystep;
         int curmouse_x,curmouse_y,ix,iy,iz,thresh;
@@ -1436,10 +1443,10 @@ void set_color(w, client_data, call_data)
         XtPointer client_data;
         XtPointer call_data;
 {
-   String color = (String) client_data;
+//   String color = (String) client_data;
    Display *dpy = XtDisplay (w);
-   Colormap cmap = DefaultColormapOfScreen (XtScreen (w));
-   XColor  col, unused;
+//   Colormap cmap = DefaultColormapOfScreen (XtScreen (w));
+   XColor  col;//, unused;
    XSetForeground (dpy,SimpleGC,col.pixel);
 }
 
@@ -1460,9 +1467,10 @@ int readdata(disk,tag,plot)
 	int	disk,tag;
 	struct dataplot *plot;
 {
-	char 	fname[128];
-	int	rdisk,rtag,rstart,rstop,rdate,rtime;
-	int	i,j,datum;
+//	char 	fname[128];
+    int rstart, rstop;
+//	int	rdisk,rtag,rstart,rstop,rdate,rtime;
+	int	i,j;//,datum;
 
 #ifdef DEBUGSHM
         printf("\nREADdata attaching %d\n",id);
@@ -1491,7 +1499,7 @@ int readdata(disk,tag,plot)
 
 /* Taken from Young, pg 141. */
 void xs_wprintf(va_alist)
-	va_dcl
+//	va_dcl
 {
 	Widget	w;
         char    *format,*sp,hname[128];
@@ -1502,7 +1510,7 @@ void xs_wprintf(va_alist)
 	int	n,rc;
         size_t  hlen;
 
-	va_start(args);
+	va_start(args, sizeof(args));
 
 	w = va_arg(args, Widget);	/* get the widget to write to */
 	if (!XtIsSubclass( w, xmLabelWidgetClass)) {
@@ -1611,14 +1619,15 @@ int fw,fm,fb,fk,*x,*y,*b,*k;
                                 *y      = report.xkey.y;
                                 keycode = report.xkey.keycode;
                                 index   = report.xkey.state;
-                                *k      = XKeycodeToKeysym(dsply,keycode,
+                                *k      = XkbKeycodeToKeysym(dsply,keycode, 0,
                                                 index);
                                 *k = keycode;
-                                return(1);
+//                                return(1);
                    
                 }
         }
 }
+
 void rflshx ()
 {
         Display *dsply;
