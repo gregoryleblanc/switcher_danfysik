@@ -29,9 +29,11 @@
  *   magnet current.
  *----------------------------------------------------------------------------*/
 
+#define _BSD_SOURCE  // needed to disable CRTSCTS for serial port
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <varargs.h>
+#include <stdarg.h>
 
 #include <signal.h>
 
@@ -68,6 +70,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+
 #define PORT        5025
 #define HOST        "10.0.0.103"
 #define DIRSIZE     8192
@@ -83,8 +86,8 @@ struct termios options;
 int fd;
 
 int	time=500;
-struct sockaddr_in sin;
-struct sockaddr_in pin;
+struct sockaddr_in s_in;
+struct sockaddr_in p_in;
 struct hostent *hp;
 
 float xval=0.001,yval=6.0,txval,tyval,save_xval=0.001,save_yval=6.0;
@@ -166,7 +169,7 @@ struct plotbuffer *plotbufferptr;
 
 	Widget  canvas;
  
-main(argc, argv)
+int main(argc, argv)
 	int argc;
 	char *argv[];
 {
