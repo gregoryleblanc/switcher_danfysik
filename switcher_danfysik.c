@@ -88,7 +88,8 @@ struct sockaddr_in pin;
 struct hostent *hp;
 
 float xval=0.001,yval=6.0,txval,tyval,save_xval=0.001,save_yval=6.0;
-float xvalmax=13.7; // calibration constant for switcher max ppm
+// float xvalmax=13.7; // calibration constant for switcher max ppm
+float xvalmax=13.57396; // calibration factor for Danfysik power supply
 
 //
 
@@ -540,7 +541,7 @@ if(halt_update == 1)
   
   
   ixval = (xval/xvalmax)*1000000;
-  printf("ixval = %06d\n",ixval);
+  // printf("ixval = %06d\n",ixval);
   sprintf(x_command,"da 0 %06d",ixval);
 
 // write messages to the Danfysik                    
@@ -608,7 +609,7 @@ if(rubberband  == 0) {
     }
   }
 ixval = (xval/xvalmax)*1000000;
-printf("ixval = %06d\n",ixval);
+// printf("ixval = %06d\n",ixval);
 sprintf(x_command,"da 0 %06d",ixval);
 write(fd, x_command, strlen(x_command));
 write(fd, "\n", 1);
@@ -948,7 +949,7 @@ void TimeOutCB(client_data, call_data )
 	     if(flag == 1) {
                 xval = new_xval/SHUNT_FACTOR;
                 ixval = (xval/xvalmax)*1000000;
-                printf("ixval = %06d\n",ixval);
+                // printf("ixval = %06d\n",ixval);
                 sprintf(x_command,"da 0 %06d",ixval);
 
 	         // write messages to the Danfysik                    
