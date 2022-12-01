@@ -65,13 +65,11 @@
 #include <unistd.h>
 
 
-
 // following for rpc command support to HP
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-
 
 #define PORT        5025
 #define HOST        "10.0.0.103"
@@ -93,7 +91,8 @@ struct sockaddr_in p_in;
 struct hostent *hp;
 
 float xval=0.001,yval=6.0,txval,tyval,save_xval=0.001,save_yval=6.0;
-float xvalmax=13.7; // calibration constant for switcher max ppm
+// float xvalmax=13.7; // calibration constant for switcher max ppm
+float xvalmax=13.57396; // calibration factor for Danfysik power supply
 
 //
 
@@ -547,8 +546,8 @@ if(halt_update == 1)
   
   
   ixval = (xval/xvalmax)*1000000;
-  printf("ixval = %06ld\n",ixval);
-  sprintf(x_command,"da 0 %06ld",ixval);
+  // printf("ixval = %06d\n",ixval);
+  sprintf(x_command,"da 0 %06d",ixval);
 
 // write messages to the Danfysik                    
  
@@ -615,8 +614,8 @@ if(rubberband  == 0) {
     }
   }
 ixval = (xval/xvalmax)*1000000;
-printf("ixval = %06ld\n",ixval);
-sprintf(x_command,"da 0 %06ld",ixval);
+// printf("ixval = %06d\n",ixval);
+sprintf(x_command,"da 0 %06d",ixval);
 write(fd, x_command, strlen(x_command));
 write(fd, "\n", 1);
 rubberband=0;
@@ -861,7 +860,7 @@ void RestoreCB(w, client_data, call_data)
 		   xval = save_xval;
 		   yval = save_yval;
                    if ((input = fopen("switcher.tandem.data","w")) != NULL) {
-                      fprintf(  input,"%s %d %f %f\n","switcher",1,xval*SHUNT_FACTOR,yval);
+                      fprintf(input,"%s %d %f %f\n","switcher",1,xval*SHUNT_FACTOR,yval);
                       fclose (input);
                       }
                 }
@@ -958,8 +957,8 @@ void TimeOutCB(client_data, call_data )
 	     if(flag == 1) {
                 xval = new_xval/SHUNT_FACTOR;
                 ixval = (xval/xvalmax)*1000000;
-                printf("ixval = %06ld\n",ixval);
-                sprintf(x_command,"da 0 %06ld",ixval);
+                // printf("ixval = %06d\n",ixval);
+                sprintf(x_command,"da 0 %06d",ixval);
 
 	         // write messages to the Danfysik                    
 		
