@@ -547,7 +547,7 @@ if(halt_update == 1)
   
   ixval = (xval/xvalmax)*1000000;
   // printf("ixval = %06d\n",ixval);
-  sprintf(x_command,"da 0 %06d",ixval);
+  sprintf(x_command,"da 0 %06ld",ixval);
 
 // write messages to the Danfysik                    
  
@@ -615,7 +615,7 @@ if(rubberband  == 0) {
   }
 ixval = (xval/xvalmax)*1000000;
 // printf("ixval = %06d\n",ixval);
-sprintf(x_command,"da 0 %06d",ixval);
+sprintf(x_command,"da 0 %06ld",ixval);
 write(fd, x_command, strlen(x_command));
 write(fd, "\n", 1);
 rubberband=0;
@@ -958,7 +958,7 @@ void TimeOutCB(client_data, call_data )
                 xval = new_xval/SHUNT_FACTOR;
                 ixval = (xval/xvalmax)*1000000;
                 // printf("ixval = %06d\n",ixval);
-                sprintf(x_command,"da 0 %06d",ixval);
+                sprintf(x_command,"da 0 %06ld",ixval);
 
 	         // write messages to the Danfysik                    
 		
