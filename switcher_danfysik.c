@@ -25,7 +25,7 @@
  *   This program is used to control the switcher magnet current 
  *   using mouse on the console computer.
  *   This version communicates with the Danfysik System 8500 power supply
- *   using the serial port /dev/ttyS0 and sends commands to adjust the 
+ *   using the serial port /dev/ttyUSB0 and sends commands to adjust the 
  *   magnet current.
  *----------------------------------------------------------------------------*/
 
@@ -230,14 +230,14 @@ int main(argc, argv)
 	plot.start=0;
 	plot.stop=1000;
 
-    fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY | O_NDELAY);
+    fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY | O_NDELAY);
     if(fd == -1)
     {
-        printf("Could not open port /dev/ttyS0\n");
+        printf("Could not open port /dev/ttyUSB0\n");
         return 1;
     }
 
-// initialize /dev/ttyS0 parameters
+// initialize /dev/ttyUSB0 parameters
 
     tcgetattr(fd, &options); //get port options
 
@@ -257,7 +257,7 @@ int main(argc, argv)
 
     tcsetattr(fd, TCSANOW, &options); //set new port options
 
-    printf("Opened successfully /dev/ttyS0\n");
+    printf("Opened successfully /dev/ttyUSB0\n");
 
     sleep(1);
 
@@ -1502,7 +1502,7 @@ int readdata(disk,tag,plot)
 void xs_wprintf(Widget wid, char *fmt, ...)
 //	va_dcl
 {
-	Widget	w;
+//	Widget	w;
         char    *format,*sp,hname[128];
 	va_list	args;
 	char	str[512];
@@ -1513,8 +1513,8 @@ void xs_wprintf(Widget wid, char *fmt, ...)
 
 	va_start(args, fmt);
 
-	w = va_arg(args, Widget);	/* get the widget to write to */
-	if (!XtIsSubclass( w, xmLabelWidgetClass)) {
+//	w = va_arg(args, Widget);	/* get the widget to write to */
+	if (!XtIsSubclass( wid, xmLabelWidgetClass)) {
 		XtError("xs_wprintf() requires a Label Widget");
 	}
 
@@ -1536,7 +1536,7 @@ void xs_wprintf(Widget wid, char *fmt, ...)
 
 	n = 0;
 	XtSetArg(wargs[n], XmNlabelString, xmstr2); n++;
-	XtSetValues( w, wargs, n);
+	XtSetValues( wid, wargs, n);
 
 	va_end(args);
 }
