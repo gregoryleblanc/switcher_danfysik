@@ -14,7 +14,7 @@
  * Authors:
  *
  *	Don Carter
- *      John O'Donnell
+ *  John O'Donnell
  *
  *	Ohio University Accelerator Laboratory
  *
